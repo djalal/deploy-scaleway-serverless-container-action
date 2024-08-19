@@ -33,6 +33,10 @@ inputs:
       The version of the API to compare against.
     required: false
     default: 'v1beta1'
+  timeout:
+    description: 'Timeout in minutes for the deployment'
+    required: false
+    default: '2'
 runs:
   using: "composite"
   steps:
@@ -54,6 +58,7 @@ runs:
           https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }}/deploy
     - name: Wait for deploy to be successful
       shell: bash
+      timeout-minutes: ${{ inputs.timeout }}
       run: >
         echo "Waiting for container to report as ready..."
         sleep 1
