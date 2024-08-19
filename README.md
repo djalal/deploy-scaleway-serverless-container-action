@@ -16,7 +16,7 @@ and extends them by:
 
 * Monitoring the deploy after it's started, and waiting until it's completed successfully
 * Exposing a v1 tag to allow easy tracking & referencing of the latest version
-* Adding a `timeout` option to fail if the container doesn't start in time
+* Adding a `timeout_seconds` option to fail if the container doesn't start in time
 
 ## Usage
 
@@ -40,7 +40,7 @@ In your workflow use this action like so, filling in the arguments with your own
 | `registry_image_url` | The URL for the registry, image, and version to use in the container, e.g: `rg.fr-par.scw.cloud/example-registry/example-image:latest` | ✔️ | N/A |
 | `region` | Scaleway region ID (one of `fr-par`, `nl-ams`, `pl-waw`) | ❌ | fr-par |
 | `api_version` | The version of the API to compare against | ❌ | v1beta1 |
-| `timeout` | How long to wait (in minutes) for the container to become ready | ❌ | 2 |
+| `timeout_seconds` | How long to wait (in seconds) for the container to become ready | ❌ | 120 |
 
 ## License
 
