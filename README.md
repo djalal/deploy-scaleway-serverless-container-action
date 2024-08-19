@@ -1,4 +1,7 @@
-# Scaleway Serverless Container Deploy
+# Deploy Scaleway Serverless Container Action
+
+[![GitHub marketplace](https://img.shields.io/badge/marketplace-deploy--scaleway--serverless--container-purple?logo=github)](https://github.com/marketplace/actions/deploy-scaleway-serverless-container)
+[![Latest release](https://img.shields.io/github/release/httptoolkit/deploy-scaleway-serverless-container-action.svg)](https://github.com/httptoolkit/deploy-scaleway-serverless-container-action/releases/latest)
 
 > _Part of [HTTP Toolkit](https://httptoolkit.com): powerful tools for building, testing & debugging HTTP(S)_
 
@@ -21,7 +24,7 @@ In your workflow use this action like so, filling in the arguments with your own
 
 ```yml
       - name: Deploy container
-        uses: httptoolkit/scaleway-serverless-container-deploy-action@v1
+        uses: httptoolkit/deploy-scaleway-serverless-container-action@v1
         with:
           container_id: 762bd6f8-1551-4a9c-bd34-5fa11889677a
           secret_key: ${{ secrets.SCALEWAY_SECRET_KEY }}
