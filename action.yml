@@ -1,4 +1,4 @@
-name: Scaleway Serverless Container Deploy
+name: Deploy Scaleway Serverless Container
 description: Allows you to deploy your Docker containers to Scaleway Serverless containers.
 author: Tim Perry
 branding:
