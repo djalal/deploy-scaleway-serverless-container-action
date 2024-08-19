@@ -1,6 +1,6 @@
 name: Scaleway Serverless Container Deploy
-description: Allows you to deploy your Docker containers in to Scaleway Serverless beta.
-author: Matt Copperwaite
+description: Allows you to deploy your Docker containers to Scaleway Serverless containers.
+author: Tim Perry
 branding:
   icon: 'grid'
   color: 'purple'
@@ -8,7 +8,6 @@ inputs:
   region:
     description: |
       Scaleway region ID.
-      Currently only fr-par supports Serverless but could also be nl-ams or pl-waw in future.
     required: true
     default: 'fr-par'
   container_id:
@@ -27,8 +26,7 @@ inputs:
     required: true
   registry_image_url:
     description: |
-      The URL for the registry, image, and version to use in the container.
-      i.e.: rg.fr-par.scw.cloud/example-registry/example-image:latest
+      The URL for the registry, image, and version to use in the container, e.g: rg.fr-par.scw.cloud/example-registry/example-image:latest
     required: true
   api_version:
     description: |
