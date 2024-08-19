@@ -54,3 +54,28 @@ runs:
           --header "X-Auth-Token:${{ inputs.secret_key }}" \
           --data '{}' \
           https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }}/deploy
+    - name: Wait for deploy to be successful
+      shell: bash
+      run: >
+        echo "Waiting for container to report as ready..."
+        sleep 1
+
+        while true; do
+          container=$(curl --silent \
+            --request GET \
+            --header "X-Auth-Token:${{ inputs.secret_key }}" \
+            https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }} \
+          )
+          status=$(echo $container | jq -r '.status')
+          error_message=$(echo $container | jq -r '.error_message')
+          echo "Container status: $status"
+
+          if [ "$status" = "pending" ]; then
+            sleep 1
+          elif [ "$status" = "ready" ]; then
+            break
+          else
+            echo "Failed to deploy container - $status: $error_message"
+            exit 1
+          fi
+        done
