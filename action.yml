@@ -44,7 +44,7 @@ runs:
       shell: bash
       run: |
         echo "Updating container image to ${{ inputs.registry_image_url }}"
-        curl \
+        curl --silent --fail -o /dev/null -w "Response: %{http_code}\n" \
           --request PATCH \
           --header "X-Auth-Token: ${{ inputs.secret_key }}" \
           --data '{"redeploy": true, "registry_image": "${{ inputs.registry_image_url }}"}' \
@@ -52,7 +52,7 @@ runs:
     - name: Redeploy container
       shell: bash
       run: |
-        curl \
+        curl --silent --fail -o /dev/null -w "Response: %{http_code}\n" \
           --request POST \
           --header "X-Auth-Token:${{ inputs.secret_key }}" \
           --data '{}' \

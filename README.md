@@ -17,6 +17,7 @@ and extends them by:
 * Monitoring the deploy after it's started, and waiting until it's completed successfully
 * Exposing a v1 tag to allow easy tracking & referencing of the latest version
 * Adding a `timeout_seconds` option to fail if the container doesn't start in time
+* Quiet the output, to report only statuses and avoid exposing any container details (e.g. Scaleway variable values) in GitHub Action logs
 
 ## Usage
 
