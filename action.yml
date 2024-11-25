@@ -9,15 +9,14 @@ inputs:
     description: |
       The UUID of the container.
       This Action does not create containers, only update existing ones. You therefore need a container to be created initially, and take the ID from that.
-      The ID can be found in the URL, or the API.
+      The ID can be found in the URL, the dashboard or the API.
     required: true
   secret_key:
     description: |
       The secret API key used to access Scaleway.
       This is generated from the Credentials page.
       This key must be for the right Organization.
-      The key must have access to the Container Registry and theServerless
-      Note that Access Key is not used,
+      The key must have access to the Container Registry and the Serverless.
     required: true
   registry_image_url:
     description: |
@@ -37,57 +36,72 @@ inputs:
     description: 'Timeout in seconds for the deployment'
     required: false
     default: '120'
+  retry_attempts:
+    description: 'Number of times to retry the deployment on failure'
+    required: false
+    default: '3'
 runs:
   using: "composite"
   steps:
-    - name: Update container with new image version
+    - name: Deploy container with retries
       shell: bash
       run: |
-        echo "Updating container image to ${{ inputs.registry_image_url }}"
-        curl --silent --fail -o /dev/null -w "Response: %{http_code}\n" \
-          --request PATCH \
-          --header "X-Auth-Token: ${{ inputs.secret_key }}" \
-          --data '{"redeploy": true, "registry_image": "${{ inputs.registry_image_url }}"}' \
-          https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }}
-    - name: Redeploy container
-      shell: bash
-      run: |
-        curl --silent --fail -o /dev/null -w "Response: %{http_code}\n" \
-          --request POST \
-          --header "X-Auth-Token:${{ inputs.secret_key }}" \
-          --data '{}' \
-          https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }}/deploy
-    - name: Wait for deploy to be successful
-      shell: bash
-      run: |
-        SECONDS=0
-        TIMEOUT=${{ inputs.timeout_seconds }}
+        RETRY_COUNT=0
+        MAX_RETRIES=${{ inputs.retry_attempts }}
 
-        echo "Waiting up to $TIMEOUT seconds for container to report as ready..."
-        sleep 1
+        deploy() {
+          echo "Updating container image to ${{ inputs.registry_image_url }}"
+          curl --silent --fail -o /dev/null -w "Response: %{http_code}\n" \
+            --request PATCH \
+            --header "X-Auth-Token: ${{ inputs.secret_key }}" \
+            --data '{"redeploy": true, "registry_image": "${{ inputs.registry_image_url }}"}' \
+            https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }}
 
-        while true; do
-          if [ $SECONDS -ge $TIMEOUT ]; then
-            echo "Deployment timed out after $TIMEOUT seconds"
-            exit 1
-          fi
-
-          container=$(curl --silent \
-            --request GET \
+          echo "Redeploying container"
+          curl --silent --fail -o /dev/null -w "Response: %{http_code}\n" \
+            --request POST \
             --header "X-Auth-Token:${{ inputs.secret_key }}" \
-            https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }} \
-          )
+            --data '{}' \
+            https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }}/deploy
 
-          status=$(echo $container | jq -r '.status')
-          error_message=$(echo $container | jq -r '.error_message')
-          echo "Container status: $status"
+          echo "Waiting for deployment to succeed"
+          SECONDS=0
+          TIMEOUT=${{ inputs.timeout_seconds }}
 
-          if [ "$status" = "pending" ]; then
-            sleep 1
-          elif [ "$status" = "ready" ]; then
-            break
-          else
-            echo "Failed to deploy container - $status: $error_message"
+          while true; do
+            if [ $SECONDS -ge $TIMEOUT ]; then
+              echo "Deployment timed out after $TIMEOUT seconds"
+              return 1
+            fi
+
+            container=$(curl --silent \
+              --request GET \
+              --header "X-Auth-Token:${{ inputs.secret_key }}" \
+              https://api.scaleway.com/containers/${{ inputs.api_version }}/regions/${{ inputs.region }}/containers/${{ inputs.container_id }} \
+            )
+
+            status=$(echo $container | jq -r '.status')
+            error_message=$(echo $container | jq -r '.error_message')
+            echo "Container status: $status"
+
+            if [ "$status" = "pending" ]; then
+              sleep 1
+            elif [ "$status" = "ready" ]; then
+              echo "Container deployed successfully"
+              return 0
+            else
+              echo "Failed to deploy container - $status: $error_message"
+              return 1
+            fi
+          done
+        }
+
+        until deploy; do
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+          if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+            echo "Exceeded maximum retry attempts ($MAX_RETRIES). Deployment failed."
             exit 1
           fi
+          echo "Retrying deployment ($RETRY_COUNT/$MAX_RETRIES)..."
+          sleep 2
         done
